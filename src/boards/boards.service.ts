@@ -27,8 +27,15 @@ export class BoardsService {
         this.boardRepository = new BoardRepository(this.dataSource);    // 수동 초기화화
     }
 
-    async getAllBoards(): Promise<Board[]> {
-        return this.boardRepository.find();
+    async getAllBoards(
+        user: User
+    ): Promise<Board[]> {
+        const query = this.boardRepository.createQueryBuilder('board');
+        query.where('board.userId = :userId', {userId: user.id });
+
+        const boards = await query.getMany();
+
+        return boards; //this.boardRepository.find();
     }
 
     createBoard(createBoardDto: CreateBoardDto, user: User): Promise<Board> {        
@@ -47,9 +54,9 @@ export class BoardsService {
         return found;
     }
 
-    async deleteBoard(id: number): Promise<void> {
-        const result = await this.boardRepository.delete(id);
-
+    async deleteBoard(id: number, user: User): Promise<void> {
+        const result = await this.boardRepository.delete({id, user});
+        
         if (result.affected === 0) {
             throw new NotFoundException(`Cnt't find Board with id ${id}`);
         }
